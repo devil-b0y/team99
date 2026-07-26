@@ -1,0 +1,882 @@
+:root{
+  --bg: #121010;
+  --bg-deep: #0a0909;
+  --text: #f4f2f0;
+  --dim: #8d8783;
+  --faint: #565150;
+  --line: rgba(244,242,240,0.14);
+  --line-soft: rgba(244,242,240,0.07);
+  --display: 'Unbounded', 'Space Grotesk', system-ui, sans-serif;
+  --ui: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --max: 1240px;
+  --hud-pad: 32px;
+}
+
+*{ box-sizing: border-box; margin: 0; padding: 0; }
+
+html{
+  scroll-behavior: smooth;
+  /* The sweep and constellation deliberately overhang the viewport — without
+     this the document itself grows and the page scrolls sideways on phones */
+  overflow-x: hidden;
+}
+
+body{
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--ui);
+  font-weight: 300;
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+a{ color: inherit; text-decoration: none; }
+ul, ol{ list-style: none; }
+img{ max-width: 100%; display: block; }
+
+/* ---------- Deep space backdrop ---------- */
+#space{
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.vignette{
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, transparent 30%, rgba(10,9,9,0.55) 78%, rgba(10,9,9,0.9) 100%);
+}
+
+/* Static — animating this repainted a double-viewport noise layer every step */
+.grain{
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- HUD chrome ---------- */
+.hud{
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px var(--hud-pad);
+  pointer-events: none;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.hud > *{ pointer-events: auto; }
+
+.hud-top{ top: 0; }
+.hud-bottom{ bottom: 0; }
+
+/* Scrims keep the HUD readable over whatever scrolls beneath it */
+.hud::before{
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 150%;
+  pointer-events: none;
+  z-index: -1;
+}
+.hud-top::before{
+  top: 0;
+  background: linear-gradient(to bottom, rgba(18,16,16,0.92) 30%, transparent);
+}
+.hud-bottom::before{
+  bottom: 0;
+  background: linear-gradient(to top, rgba(18,16,16,0.92) 30%, transparent);
+}
+
+.hud-brand{
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: none;
+}
+
+.hud-mark{
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--text);
+  border-radius: 3px;
+  position: relative;
+  flex-shrink: 0;
+}
+.hud-mark::after{
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid var(--text);
+  border-radius: 50%;
+  animation: markSpin 9s linear infinite;
+  transform-origin: center;
+  border-left-color: transparent;
+}
+
+@keyframes markSpin{ to{ transform: rotate(360deg); } }
+
+.hud-top-right{
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+
+.hud-meta{ color: var(--dim); }
+
+.hud-menu-btn{
+  background: none;
+  border: none;
+  color: var(--text);
+  font: inherit;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 4px 0;
+  position: relative;
+}
+.hud-menu-btn::after{
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--text);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.4s cubic-bezier(.16,1,.3,1);
+}
+.hud-menu-btn:hover::after,
+.hud-menu-btn[aria-expanded="true"]::after{
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.hud-section{ color: var(--dim); }
+.hud-section b{
+  color: var(--text);
+  font-weight: 500;
+  margin-left: 10px;
+}
+
+/* Centred hint with a thread dropping to the bottom edge */
+.hud-hint{
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  color: var(--faint);
+  animation: hintPulse 2.6s ease-in-out infinite;
+  transition: opacity 0.5s ease;
+}
+.hud-hint::after{
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 10px);
+  width: 1px;
+  height: 26px;
+  background: linear-gradient(to bottom, rgba(244,242,240,0.35), transparent);
+}
+.hud-hint.gone{ opacity: 0; }
+
+.hud-section .caret{
+  display: inline-block;
+  margin-left: 10px;
+  color: var(--faint);
+}
+
+@keyframes hintPulse{
+  0%, 100%{ opacity: 0.45; }
+  50%{ opacity: 1; }
+}
+
+/* Right-hand scroll rail */
+.rail{
+  position: fixed;
+  top: 22vh;
+  bottom: 22vh;
+  right: 26px;
+  width: 1px;
+  background: var(--line-soft);
+  z-index: 60;
+}
+.rail-fill{
+  width: 100%;
+  height: 0%;
+  background: var(--text);
+  transition: height 0.12s linear;
+}
+
+/* ---------- Overlay menu ---------- */
+.menu{
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: rgba(10,9,9,0.9);
+  backdrop-filter: blur(18px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease, visibility 0.5s;
+}
+.menu.open{ opacity: 1; visibility: visible; }
+
+.menu a{
+  font-family: var(--display);
+  font-size: clamp(1.6rem, 5vw, 3.2rem);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--dim);
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  padding: 6px 0;
+  opacity: 0;
+  transform: translateY(24px);
+  transition: color 0.3s ease, opacity 0.6s cubic-bezier(.16,1,.3,1), transform 0.6s cubic-bezier(.16,1,.3,1);
+}
+.menu.open a{ opacity: 1; transform: none; }
+.menu a:hover{ color: var(--text); }
+.menu a .idx{
+  font-family: var(--ui);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--faint);
+}
+
+/* ---------- Panels ---------- */
+/* Top/bottom padding keeps content clear of the fixed HUD bars */
+.panel{
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 150px var(--hud-pad) 170px;
+  max-width: var(--max);
+  margin: 0 auto;
+  width: 100%;
+}
+.panel-center{ text-align: center; align-items: center; }
+
+/* Content flies in from deep space */
+.panel-inner{
+  opacity: 0;
+  transform: scale(0.62) translateY(60px);
+  filter: blur(16px);
+  transition:
+    opacity 1.1s cubic-bezier(.16,1,.3,1),
+    transform 1.1s cubic-bezier(.16,1,.3,1),
+    filter 1.1s cubic-bezier(.16,1,.3,1);
+  width: 100%;
+}
+.panel.visible .panel-inner{
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+}
+
+/* ---------- Display type ---------- */
+.display{
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(3.2rem, 11vw, 8.6rem);
+  line-height: 0.86;
+  letter-spacing: -0.03em;
+  display: flex;
+  flex-direction: column;
+}
+.d-outline{
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--text);
+  padding-left: 0.04em;
+}
+.d-solid{ color: var(--text); }
+
+.paren{
+  font-size: clamp(0.85rem, 2vw, 1.05rem);
+  letter-spacing: 0.42em;
+  color: var(--dim);
+  margin: 18px 0 26px;
+  padding-left: 0.3em;
+}
+
+.heading{
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(2rem, 5.5vw, 4.2rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin-bottom: 28px;
+}
+
+.eyebrow{
+  font-size: 0.72rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 20px;
+}
+
+.lede{
+  color: var(--dim);
+  max-width: 620px;
+  font-size: 1rem;
+  margin-bottom: 56px;
+}
+.lede-center{ margin-left: auto; margin-right: auto; }
+.lede b{ color: var(--text); font-weight: 500; }
+
+.statement{
+  max-width: 720px;
+  margin: 0 auto;
+  color: var(--dim);
+  font-size: clamp(1rem, 2.2vw, 1.35rem);
+  line-height: 1.7;
+}
+.statement b{ color: var(--text); font-weight: 500; }
+
+/* ---------- Intro ---------- */
+.intro-grid{
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.tick-list{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+.tick-list li{
+  position: relative;
+  padding-left: 28px;
+  color: var(--dim);
+  font-size: 0.98rem;
+}
+.tick-list li::before{
+  content: "✦";
+  position: absolute;
+  left: 0;
+  color: var(--faint);
+  font-size: 0.75rem;
+  top: 0.25em;
+}
+
+.intro-side{
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+}
+
+.frame{
+  border: 1px solid var(--line);
+  padding: 6px;
+  background: rgba(244,242,240,0.02);
+  overflow: hidden;
+  transition: transform 0.5s cubic-bezier(.16,1,.3,1), border-color 0.4s ease;
+}
+.frame img{
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.08);
+  transition: filter 0.5s ease, transform 0.7s cubic-bezier(.16,1,.3,1);
+}
+.frame:hover{ border-color: var(--text); }
+.frame:hover img{ filter: grayscale(0) contrast(1); transform: scale(1.04); }
+
+.frame-tilt-a{ transform: rotate(-4deg) translateY(10px); width: 33%; }
+.frame-tilt-b{ transform: rotate(2deg); width: 33%; }
+.frame-tilt-c{ transform: rotate(5deg) translateY(16px); width: 33%; }
+.frame-tilt-a:hover{ transform: rotate(-4deg) translateY(2px); }
+.frame-tilt-b:hover{ transform: rotate(2deg) translateY(-8px); }
+.frame-tilt-c:hover{ transform: rotate(5deg) translateY(8px); }
+
+.actions{
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.btn{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--text);
+  padding: 13px 28px;
+  border-radius: 999px;
+  font-family: var(--ui);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition: color 0.4s ease, border-color 0.4s ease;
+}
+.btn::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--text);
+  transform: translateY(101%);
+  transition: transform 0.5s cubic-bezier(.16,1,.3,1);
+}
+.btn:hover{ color: var(--bg); }
+.btn:hover::before{ transform: translateY(0); }
+
+.btn-quiet{
+  border-color: var(--line);
+  color: var(--dim);
+}
+.btn-quiet:hover{ color: var(--bg); border-color: var(--text); }
+
+.stat-strip{
+  display: flex;
+  gap: 64px;
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line-soft);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.9s ease 0.4s, transform 0.9s cubic-bezier(.16,1,.3,1) 0.4s;
+}
+.panel.visible .stat-strip{ opacity: 1; transform: none; }
+
+.stat{ display: flex; flex-direction: column; gap: 2px; }
+.stat-num{
+  font-family: var(--display);
+  font-size: 1.9rem;
+  font-weight: 600;
+  line-height: 1;
+}
+.stat-label{
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* ---------- Ticker ---------- */
+.ticker{
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  overflow: hidden;
+  padding: 16px 0;
+  background: rgba(10,9,9,0.4);
+}
+.ticker-inner{ will-change: transform; }
+.ticker-track{
+  display: flex;
+  width: max-content;
+  gap: 34px;
+  animation: tickerScroll 30s linear infinite;
+}
+.ticker-track span{
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.24em;
+  color: var(--faint);
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+@keyframes tickerScroll{
+  from{ transform: translateX(0); }
+  to{ transform: translateX(-50%); }
+}
+
+/* ---------- Skills index list ---------- */
+.index-list{
+  border-top: 1px solid var(--line-soft);
+}
+.index-list li{
+  display: grid;
+  grid-template-columns: 64px 1fr 1.1fr;
+  gap: 24px;
+  align-items: baseline;
+  padding: 26px 12px;
+  border-bottom: 1px solid var(--line-soft);
+  transition: background 0.4s ease, padding 0.4s cubic-bezier(.16,1,.3,1);
+}
+.index-list li:hover{
+  background: rgba(244,242,240,0.03);
+  padding-left: 26px;
+}
+.idx{
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--faint);
+}
+.il-name{
+  font-family: var(--display);
+  font-size: clamp(1.05rem, 2.4vw, 1.7rem);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  transition: color 0.35s ease;
+}
+.index-list li:hover .il-name{ color: var(--text); }
+.il-note{
+  color: var(--faint);
+  font-size: 0.9rem;
+  transition: color 0.35s ease;
+}
+.index-list li:hover .il-note{ color: var(--dim); }
+
+/* ---------- Crew ---------- */
+.crew{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 34px;
+}
+.crew-card .frame{ margin-bottom: 20px; }
+/* Square crops so the portraits don't push the names off-screen */
+.crew-card .frame img{ aspect-ratio: 1 / 1; }
+.crew-card h3{
+  font-family: var(--display);
+  font-size: 1.1rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin-bottom: 6px;
+}
+.role{
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 14px;
+}
+.bio{
+  color: var(--faint);
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}
+.edu{
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--faint);
+  border-top: 1px solid var(--line-soft);
+  padding-top: 14px;
+  margin-bottom: 16px;
+}
+.links{ display: flex; gap: 20px; }
+.links a{
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dim);
+  position: relative;
+  padding-bottom: 3px;
+}
+.links a::after{
+  content: "";
+  position: absolute;
+  left: 0; bottom: 0;
+  width: 100%; height: 1px;
+  background: var(--text);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.4s cubic-bezier(.16,1,.3,1);
+}
+.links a:hover{ color: var(--text); }
+.links a:hover::after{ transform: scaleX(1); transform-origin: left; }
+
+/* ---------- Work ---------- */
+.work{
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 54px;
+  padding: 46px 0;
+  border-top: 1px solid var(--line-soft);
+}
+.work-title{
+  font-family: var(--display);
+  font-size: clamp(1.6rem, 4vw, 2.9rem);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  margin-top: 16px;
+}
+.tag{
+  display: inline-block;
+  font-size: 0.64rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  border: 1px solid var(--text);
+  border-radius: 999px;
+  padding: 5px 14px;
+  color: var(--text);
+}
+.tag-muted{ border-color: var(--line); color: var(--faint); }
+
+.work-body p{
+  color: var(--dim);
+  font-size: 0.95rem;
+  margin-bottom: 26px;
+}
+.work-body .tick-list{ margin-bottom: 28px; }
+.work-body .tick-list li{ color: var(--text); font-size: 0.92rem; }
+
+.extra-feature{ display: none; }
+.tick-list.expanded .extra-feature{
+  display: block;
+  animation: fadeUp 0.5s cubic-bezier(.16,1,.3,1) both;
+}
+
+@keyframes fadeUp{
+  from{ opacity: 0; transform: translateY(-6px); }
+  to{ opacity: 1; transform: translateY(0); }
+}
+
+.work-soon .work-body{ display: flex; align-items: center; }
+
+/* ---------- Contact ---------- */
+.mail-link{
+  display: inline-block;
+  font-family: var(--display);
+  font-size: clamp(1.2rem, 4.5vw, 3rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  position: relative;
+  padding-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+.mail-link::after{
+  content: "";
+  position: absolute;
+  left: 0; bottom: 0;
+  width: 100%; height: 1px;
+  background: var(--text);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.6s cubic-bezier(.16,1,.3,1);
+}
+.mail-link:hover::after{ transform: scaleX(1); transform-origin: left; }
+
+.end-note{
+  display: flex;
+  justify-content: center;
+  gap: 34px;
+  flex-wrap: wrap;
+  margin-top: 90px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* ---------- Responsive ---------- */
+/* Decorations overhang their section on purpose — clip them while the page
+   scrolls normally (flight mode already locks overflow on html/body) */
+html:not(.flight) .panel{ overflow: hidden; }
+
+@media (max-width: 940px){
+  .constellation{ font-size: 0.62rem; }
+  .intro-grid{ grid-template-columns: 1fr; gap: 44px; }
+  .crew{ grid-template-columns: 1fr; gap: 44px; }
+  .work{ grid-template-columns: 1fr; gap: 26px; }
+  .index-list li{ grid-template-columns: 44px 1fr; }
+  .il-note{ grid-column: 2; }
+}
+
+@media (max-width: 620px){
+  :root{ --hud-pad: 20px; }
+  .constellation{ font-size: 0.4rem; }
+  .statement-lg{ font-size: 1.02rem; }
+  .sweep{ bottom: 4%; }
+  /* Content is taller than a phone screen — flow from the top instead of centring */
+  .panel{ padding: 120px var(--hud-pad) 170px; justify-content: flex-start; }
+  .hud-meta{ display: none; }
+  .rail{ display: none; }
+  .stat-strip{ gap: 32px; margin-top: 48px; }
+  .intro-side{ gap: 10px; }
+  .end-note{ gap: 14px; }
+}
+
+/* ---------- Diagonal outline sweep ---------- */
+.sweep{
+  position: absolute;
+  left: -25%;
+  right: -25%;
+  bottom: 8%;
+  overflow: hidden;
+  pointer-events: none;
+  transform: rotate(-13deg);
+  z-index: -1;
+  mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+}
+.sweep-track{
+  display: flex;
+  align-items: center;
+  gap: 42px;
+  width: max-content;
+  animation: sweepScroll 26s linear infinite;
+}
+.sweep-track span{
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(3rem, 9vw, 7.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1.4px rgba(244,242,240,0.26);
+}
+
+@keyframes sweepScroll{
+  from{ transform: translateX(0); }
+  to{ transform: translateX(-50%); }
+}
+
+/* ---------- Keyword constellation ---------- */
+.constellation{
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+  /* Nodes are sized in em, so this one value scales the whole field per screen */
+  font-size: 1rem;
+}
+.node{
+  position: absolute;
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  color: var(--text);
+  translate: -50% -50%;
+  animation: nodeFloat 14s ease-in-out infinite;
+}
+.node:nth-child(3n){ animation-duration: 19s; animation-delay: -4s; }
+.node:nth-child(3n+1){ animation-duration: 16s; animation-delay: -9s; }
+
+@keyframes nodeFloat{
+  0%, 100%{ transform: translate(0, 0); }
+  50%{ transform: translate(0, -14px); }
+}
+
+.statement-lg{
+  font-size: clamp(1.05rem, 2.6vw, 1.7rem);
+  max-width: 640px;
+  color: var(--text);
+}
+
+/* =========================================================
+   FLIGHT MODE
+   The page stops scrolling. Scroll input drives a camera and
+   each panel flies at you out of the starfield.
+   ========================================================= */
+html.flight,
+html.flight body{
+  height: 100%;
+  overflow: hidden;
+}
+
+html.flight .panel{
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  max-width: none;
+  min-height: 0;
+  padding: 96px 0 104px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: 50% 50%;
+  backface-visibility: hidden;
+  /* transform only — listing filter here promotes a blur layer for every
+     panel up front, which costs far more than it saves */
+  will-change: transform;
+  pointer-events: none;
+  visibility: hidden;
+  /* no `contain: paint` here — the sweep overhangs its panel by design */
+}
+
+html.flight .panel-inner{
+  max-width: var(--max);
+  width: 100%;
+  padding: 0 var(--hud-pad);
+  max-height: 100%;
+  pointer-events: none;
+  /* The camera owns the motion — kill the per-panel reveal */
+  opacity: 1;
+  transform: none;
+  filter: none;
+  transition: none;
+}
+
+html.flight .stat-strip{
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+/* Only one thing flies at a time — the ticker belongs to the scrolling fallback */
+html.flight .ticker{ display: none; }
+
+/* Keep every station inside one screen at cruising scale */
+html.flight .crew{ max-width: 940px; margin-inline: auto; }
+html.flight .bio{ display: none; }
+html.flight .heading{ margin-bottom: 22px; }
+html.flight .lede{ margin-bottom: 34px; }
+html.flight .index-list li{ padding: 20px 12px; }
+html.flight .work{ padding: 28px 0 0; border-top: none; }
+html.flight .work-body p{ margin-bottom: 20px; }
+
+.heading-lg{
+  font-size: clamp(2.4rem, 7vw, 5.2rem);
+  margin-top: 18px;
+}
+.panel-center .tag{ margin-bottom: 4px; }
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce){
+  html{ scroll-behavior: auto; }
+  .panel-inner,
+  .stat-strip{
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+  .ticker-track,
+  .grain,
+  .hud-mark::after,
+  .hud-hint{ animation: none; }
+  .ticker-inner{ transform: none !important; }
+  .menu a{ opacity: 1; transform: none; }
+}
