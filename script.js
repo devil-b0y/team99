@@ -18,6 +18,29 @@ let orbs = [];
 const TAU = Math.PI * 2;
 const rand = (min, max) => min + Math.random() * (max - min);
 
+/* ---------- Frame-rate independence ----------
+   Every easing constant here was tuned against a 60Hz frame. Applied once per
+   frame regardless of rate, the whole animation ran at the monitor's speed — a
+   165Hz panel advanced the camera 2.75x faster than a 60Hz one. So each frame
+   measures how long it actually took and scales by `f`, its length in 60Hz
+   frames. At 60Hz f is 1 and nothing below changes. */
+const FRAME60 = 1000 / 60;
+
+// Exponential smoothers must compound, not scale: pulling 12% of the way twice
+// leaves you at 1-(1-0.12)^2 = 22.6%, not 24%. Multiplying the coefficient by f
+// instead would overshoot badly on slow frames (f>1 could push it past 1.0 and
+// oscillate). This reaches the same place in the same wall-clock time at any rate.
+const ease = (coeff60, f) => 1 - Math.pow(1 - coeff60, f);
+
+// A frame longer than this means the tab was throttled, the machine stalled, or a
+// debugger paused us — advancing by the real gap would teleport the camera, so
+// charge it as one nominal frame instead.
+const DT_MAX = 100;
+const frameFactor = (t, prev) => {
+  const dt = prev ? t - prev : FRAME60;
+  return (dt > 0 && dt <= DT_MAX ? dt : FRAME60) / FRAME60;
+};
+
 const seedField = () => {
   stars = Array.from({ length: STAR_COUNT }, () => ({
     x: rand(-1900, 1900),
@@ -189,49 +212,80 @@ const render = (t) => {
 // Adaptive quality: thin the field on machines that can't keep up, rather than
 // dropping frames. Recovers again if the load lets up.
 let starBudget = STAR_COUNT;
-let frameAvg = 16.7;
+let frameAvg = FRAME60;
 let lastFrameT = 0;
 let qualityTick = 0;
 let lowPower = false;   // set once a machine proves it can't afford the blur
 
+// Health has to be judged against the display, not against 60Hz. The old absolute
+// millisecond thresholds meant a 144Hz panel — where a good frame is 6.9ms — could
+// never trip them, so a machine genuinely dropping to 90fps was read as fine and
+// never thinned the field. rAF is vsync-locked, so the shortest frame we observe is
+// a good proxy for the panel's own interval: judge frameAvg as a multiple of that.
+let baseFrame = 0;
+let samples = 0;
+
+// Ratios, not milliseconds. At 60Hz they work out to the original 21 / 18 / 25ms,
+// so nothing changes there; on faster panels they scale with the hardware. The gap
+// between DEGRADE and RECOVER is the hysteresis that stops it oscillating.
+const DEGRADE = 1.26;
+const RECOVER = 1.08;
+const STRUGGLING = 1.50;
+
 const adaptQuality = (t) => {
   if (lastFrameT) {
     const dt = t - lastFrameT;
-    if (dt < 200) frameAvg += (dt - frameAvg) * 0.06;
+    if (dt > 1 && dt < 200) {
+      frameAvg += (dt - frameAvg) * 0.06;
+      // 4ms floors this at a sane 250Hz, so one freak short frame can't convince us
+      // the panel is faster than it is and leave us permanently over-eager to degrade.
+      if (!baseFrame || dt < baseFrame) baseFrame = Math.max(dt, 4);
+      samples++;
+    }
   }
   lastFrameT = t;
 
   if (++qualityTick < 45) return;
   qualityTick = 0;
 
-  if (frameAvg > 21 && starBudget > 350) {
+  // frameAvg starts at a 60Hz guess, which on a 144Hz panel reads as 2.4x overload.
+  // Let it converge on reality before acting on it.
+  if (!baseFrame || samples < 120) return;
+
+  const load = frameAvg / baseFrame;
+
+  if (load > DEGRADE && starBudget > 350) {
     starBudget = Math.max(350, starBudget - 200);
-  } else if (frameAvg < 15 && starBudget < STAR_COUNT && !lowPower) {
+  } else if (load < RECOVER && starBudget < STAR_COUNT && !lowPower) {
     starBudget = Math.min(STAR_COUNT, starBudget + 100);
   }
 
   // Still struggling after thinning the field? Drop the depth-of-field blur —
   // it's the most expensive effect here and the least essential.
-  if (!lowPower && frameAvg > 25 && starBudget <= 350) {
+  if (!lowPower && load > STRUGGLING && starBudget <= 350) {
     lowPower = true;
     lastPainted = -1;   // force one repaint so the blur actually clears
   }
 };
 
 let rafId = null;
+let lastLoopT = 0;
 const loop = (t) => {
+  const f = frameFactor(t, lastLoopT);
+  lastLoopT = t;
+
   adaptQuality(t);
-  if (flight) stepFlight();
+  if (flight) stepFlight(f);
 
   // Constant gentle drift forward, plus whatever the scroll is adding
-  drift += 0.22;
+  drift += 0.22 * f;
   camZ = scrollDepth + drift;
 
-  warp += (targetWarp - warp) * 0.12;
-  if (!flight) targetWarp *= 0.9;
+  warp += (targetWarp - warp) * ease(0.12, f);
+  if (!flight) targetWarp *= Math.pow(0.9, f);
 
-  parX += (pointerX - parX) * 0.05;
-  parY += (pointerY - parY) * 0.05;
+  parX += (pointerX - parX) * ease(0.05, f);
+  parY += (pointerY - parY) * ease(0.05, f);
 
   render(t);
   rafId = requestAnimationFrame(loop);
@@ -251,13 +305,17 @@ let lastScrollY = window.scrollY;
 let scrollTicking = false;
 
 // The ticker leans into the scroll and springs back
-let targetSkew = 0, currentSkew = 0, skewRaf = null;
-const runSkew = () => {
-  currentSkew += (targetSkew - currentSkew) * 0.14;
-  targetSkew *= 0.88;
+let targetSkew = 0, currentSkew = 0, skewRaf = null, lastSkewT = 0;
+const runSkew = (t) => {
+  const f = frameFactor(t, lastSkewT);
+  lastSkewT = t;
+
+  currentSkew += (targetSkew - currentSkew) * ease(0.14, f);
+  targetSkew *= Math.pow(0.88, f);
   if (Math.abs(currentSkew) < 0.02 && Math.abs(targetSkew) < 0.02) {
     tickerInner.style.transform = '';
     skewRaf = null;
+    lastSkewT = 0;   // this spring stops and restarts; don't carry a stale stamp
     return;
   }
   tickerInner.style.transform = `skewX(${currentSkew.toFixed(2)}deg)`;
@@ -265,6 +323,10 @@ const runSkew = () => {
 };
 
 const onScroll = () => {
+  // Release the rAF gate first. Bailing out while it was still held meant one
+  // scroll event landing during flight mode wedged it shut forever, and scroll
+  // updates never resumed after switching back.
+  scrollTicking = false;
   if (flight) return;   // in flight mode the camera, not the document, moves
   const y = window.scrollY;
   const max = document.documentElement.scrollHeight - window.innerHeight;
@@ -334,9 +396,15 @@ const depthOpacity = (z) => z >= 0
 // Layers belong to the section you're already standing in, so they must NOT get the
 // aggressive between-section falloff — that would erase the keyword constellation at
 // its own station. Gentle enough to stay readable while still sitting back in depth.
+// Sweeping out behind the camera is deliberately faster than for a whole panel.
+// The constellation trails its station by 0.55, so on the gentler 0.72 falloff it
+// was still ~42% lit once the camera reached the *next* station — and since nearer
+// stations sit on higher z-indexes, the keywords painted straight over the Team
+// cards. Clearing by 0.40 means a trailing layer is gone before the next station
+// lands, so it reads only in the gap between the two.
 const layerOpacity = (z) => z >= 0
   ? Math.exp(-z * 0.9)
-  : 1 - smoothstep(0.12, 0.72, -z);
+  : 1 - smoothstep(0.05, 0.40, -z);
 
 // Below this a panel is a faint smudge at best — drop it instead of drawing it
 const CULL = 0.022;
@@ -390,8 +458,9 @@ const paintFlight = () => {
       }
 
       p.style.visibility = visible ? 'visible' : 'hidden';
-      const inner = p.querySelector('.panel-inner');
-      if (inner) inner.style.pointerEvents = Math.abs(z) < 0.3 ? 'auto' : 'none';
+      const atLens = Math.abs(z) < 0.3;
+      if (p._inner) p._inner.style.pointerEvents = atLens ? 'auto' : 'none';
+      if (atLens && p._counters.length) p._counters.forEach(animateCount);
       continue;
     }
 
@@ -409,8 +478,10 @@ const paintFlight = () => {
 
     // Only the station at the lens takes clicks — and only its content, since
     // the panel itself is a full-screen box that would otherwise eat every click
-    const inner = p.querySelector('.panel-inner');
-    if (inner) inner.style.pointerEvents = Math.abs(z) < 0.3 ? 'auto' : 'none';
+    const atLens = Math.abs(z) < 0.3;
+    if (p._inner) p._inner.style.pointerEvents = atLens ? 'auto' : 'none';
+    // Counters wait until their station actually arrives (see statObserver)
+    if (atLens && p._counters.length) p._counters.forEach(animateCount);
   }
 
   railFill.style.height = ((current / LAST) * 100).toFixed(2) + '%';
@@ -421,12 +492,16 @@ const paintFlight = () => {
 
 let lastPainted = -1;
 
-const stepFlight = () => {
+const stepFlight = (f = 1) => {
   const prev = current;
-  current += (target - current) * EASE;
+  current += (target - current) * ease(EASE, f);
   if (Math.abs(target - current) < 0.0002) current = target;
 
-  const vel = current - prev;
+  // Per-60Hz-frame velocity, not per-actual-frame: a 165Hz display covers the same
+  // ground in three short steps instead of one, and the raw delta would read as a
+  // third of the speed and under-streak. Dividing by f keeps 1300 meaning what it
+  // meant when it was tuned. (scrollDepth is positional, so it needs no correction.)
+  const vel = (current - prev) / f;
   scrollDepth = current * 950;                    // camera pushes through the stars
   targetWarp = Math.min(34, Math.abs(vel) * 1300); // fast travel streaks them
 
@@ -540,6 +615,9 @@ panels.forEach(p => {
   labelObserver.observe(p);
   p._layers = [...p.querySelectorAll('[data-z]')]
     .map(el => ({ el, dz: parseFloat(el.dataset.z) || 0 }));
+  // Cached so paintFlight isn't running queries every frame
+  p._counters = [...p.querySelectorAll('.stat-num[data-count]')];
+  p._inner = p.querySelector('.panel-inner');
 });
 
 const setMode = (on) => {
@@ -557,6 +635,10 @@ const setMode = (on) => {
     panels.forEach(p => {
       p.style.cssText = '';
       p._layers.forEach(({ el }) => { el.style.cssText = ''; });
+      // paintFlight writes pointer-events inline, and .panel-inner is usually not
+      // a depth layer, so cssText above doesn't reach it. Left set, every section
+      // away from the lens stayed click-dead once the document took over.
+      if (p._inner) p._inner.style.pointerEvents = '';
       p.classList.add('visible');
     });
     scrollDepth = 0;
@@ -604,12 +686,15 @@ readMoreBtn.addEventListener('click', () => {
    Stat counters
    ========================================================= */
 const animateCount = (el) => {
-  const target = parseInt(el.dataset.count, 10);
+  if (el.dataset.counted) return;   // both flight and scroll mode can ask
+  el.dataset.counted = '1';
+  const to = parseInt(el.dataset.count, 10);
+  if (!Number.isFinite(to)) return;
   const duration = 1100;
   const start = performance.now();
   const tick = (now) => {
     const p = Math.min((now - start) / duration, 1);
-    el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+    el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3)));
     if (p < 1) requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
@@ -617,7 +702,10 @@ const animateCount = (el) => {
 
 const statObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
-    if (entry.isIntersecting) {
+    // Flight mode parks every panel at position:fixed over the viewport, so they
+    // all "intersect" from the first frame and the counters would finish out in
+    // the dark. There, paintFlight starts them when the station hits the lens.
+    if (entry.isIntersecting && !flight) {
       animateCount(entry.target);
       statObserver.unobserve(entry.target);
     }
@@ -656,6 +744,11 @@ if (prefersReducedMotion) {
       cancelAnimationFrame(rafId);
       rafId = null;
     } else if (!rafId) {
+      // Both stamps are from before the tab slept; left alone, the first frame back
+      // would measure the whole hidden period. frameFactor caps that anyway, but
+      // clearing them keeps the frame-time average clean too.
+      lastLoopT = 0;
+      lastFrameT = 0;
       rafId = requestAnimationFrame(loop);
     }
   });

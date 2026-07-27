@@ -410,12 +410,10 @@ img{ max-width: 100%; display: block; }
 .frame:hover{ border-color: var(--text); }
 .frame:hover img{ filter: grayscale(0) contrast(1); transform: scale(1.04); }
 
-.frame-tilt-a{ transform: rotate(-4deg) translateY(10px); width: 33%; }
-.frame-tilt-b{ transform: rotate(2deg); width: 33%; }
-.frame-tilt-c{ transform: rotate(5deg) translateY(16px); width: 33%; }
-.frame-tilt-a:hover{ transform: rotate(-4deg) translateY(2px); }
-.frame-tilt-b:hover{ transform: rotate(2deg) translateY(-8px); }
-.frame-tilt-c:hover{ transform: rotate(5deg) translateY(8px); }
+/* Single founder portrait — wider than the old 33% three-up row, and hung straight.
+   translateY is kept on both so the hover still lifts it. */
+.frame-solo{ transform: translateY(10px); width: 58%; }
+.frame-solo:hover{ transform: translateY(2px); }
 
 .actions{
   display: flex;
