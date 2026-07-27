@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://team99.dev/sitemap.xml
+Sitemap: https://team99.tech/sitemap.xml

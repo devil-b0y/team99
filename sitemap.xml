@@ -1,8 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
-    <loc>https://team99.dev/</loc>
+    <loc>https://team99.tech/</loc>
+    <lastmod>2026-07-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://team99.tech/assets/akshat.png</image:loc>
+      <image:title>Akshat Singh Baghel — Founder &amp; Full Stack Developer</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://team99.tech/assets/naved.jpeg</image:loc>
+      <image:title>Mohammad Naved — Co-Founder &amp; Backend Developer</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://team99.tech/assets/aryan.jpeg</image:loc>
+      <image:title>Aryan Vishwakarma — Co-Founder &amp; UI/UX Developer</image:title>
+    </image:image>
   </url>
 </urlset>

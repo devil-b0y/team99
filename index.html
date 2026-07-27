@@ -6,39 +6,125 @@
 <title>Team99 | IoT &amp; Cyber Security Student Developers — GGITS Jabalpur</title>
 <meta name="description" content="Team99 is a 3-member student developer team from GGITS Jabalpur (IoT &amp; Cyber Security incl. Blockchain) building fast websites, apps and AI-hardware projects like the Smart AI-Based Attendance System.">
 <meta name="keywords" content="Team99, GGITS Jabalpur, Gyan Ganga Institute of Technology and Sciences, IoT Cyber Security student developers, Smart AI Attendance System, Akshat Singh Baghel, Mohammad Naved, Aryan Vishwakarma">
-<meta name="robots" content="index, follow">
+<!-- max-image-preview:large opts into full-size image thumbnails in Google results -->
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<meta name="author" content="Team99 — Akshat Singh Baghel, Mohammad Naved, Aryan Vishwakarma">
 <meta name="theme-color" content="#121010">
-<link rel="canonical" href="https://team99.dev/">
+<link rel="canonical" href="https://team99.tech/">
 
-<!-- Open Graph -->
+<!-- Open Graph. og:image must be an absolute URL — crawlers do not resolve
+     relative paths, so a bare "assets/..." silently yields no preview. -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="Team99 | IoT &amp; Cyber Security Student Developers — GGITS Jabalpur">
 <meta property="og:description" content="A 3-member student developer team from GGITS Jabalpur building fast websites, apps and AI-hardware projects — including the Smart AI-Based Attendance System.">
-<meta property="og:url" content="https://team99.dev/">
+<meta property="og:url" content="https://team99.tech/">
 <meta property="og:site_name" content="Team99">
+<meta property="og:locale" content="en_IN">
+<meta property="og:image" content="https://team99.tech/assets/og-image.png">
+<meta property="og:image:secure_url" content="https://team99.tech/assets/og-image.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Team99 — IoT &amp; Cyber Security student developers from GGITS Jabalpur">
 
 <!-- Twitter -->
-<meta name="twitter:card" content="summary">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Team99 | IoT &amp; Cyber Security Student Developers — GGITS Jabalpur">
 <meta name="twitter:description" content="A 3-member student developer team from GGITS Jabalpur building fast websites, apps and AI-hardware projects — including the Smart AI-Based Attendance System.">
+<meta name="twitter:image" content="https://team99.tech/assets/og-image.png">
+<meta name="twitter:image:alt" content="Team99 — IoT &amp; Cyber Security student developers from GGITS Jabalpur">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
+<!-- Fetched at high priority but applied without blocking the first paint. The
+     stylesheet link is kept in <noscript> so the fonts still load with JS off. -->
+<link rel="preload" as="style"
+      href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Space+Grotesk:wght@300;400;500;700&display=swap">
+<link rel="stylesheet" media="print" onload="this.media='all';this.onload=null"
+      href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Space+Grotesk:wght@300;400;500;700&display=swap">
+<noscript>
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Space+Grotesk:wght@300;400;500;700&display=swap">
+</noscript>
 <link rel="stylesheet" href="style.css">
 
+<!-- One @graph rather than separate blocks, so the Organization, the WebSite and the
+     project are linked by @id instead of floating as three unrelated entities. -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "Team99",
-  "url": "https://team99.dev/",
-  "description": "Team99 is a 3-member student developer team from Gyan Ganga Institute of Technology & Sciences (GGITS), Jabalpur, studying IoT & Cyber Security including Blockchain Technology. We build websites, apps and AI-hardware projects.",
-  "email": "support@team99.tech",
-  "member": [
-    { "@type": "Person", "name": "Akshat Singh Baghel", "jobTitle": "Founder & Full Stack Developer", "alumniOf": "Gyan Ganga Institute of Technology & Sciences, Jabalpur" },
-    { "@type": "Person", "name": "Mohammad Naved", "jobTitle": "Co-Founder & Backend Developer", "alumniOf": "Gyan Ganga Institute of Technology & Sciences, Jabalpur" },
-    { "@type": "Person", "name": "Aryan Vishwakarma", "jobTitle": "Co-Founder & UI/UX Developer", "alumniOf": "Gyan Ganga Institute of Technology & Sciences, Jabalpur" }
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://team99.tech/#organization",
+      "name": "Team99",
+      "alternateName": "Team 99",
+      "url": "https://team99.tech/",
+      "description": "Team99 is a 3-member student developer team from Gyan Ganga Institute of Technology & Sciences (GGITS), Jabalpur, studying IoT & Cyber Security including Blockchain Technology. We build websites, apps and AI-hardware projects.",
+      "email": "support@team99.tech",
+      "image": "https://team99.tech/assets/og-image.png",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://team99.tech/assets/og-image.png",
+        "width": 1200,
+        "height": 630
+      },
+      "sameAs": ["https://github.com/devil-b0y/team99"],
+      "foundingLocation": {
+        "@type": "Place",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Jabalpur",
+          "addressRegion": "Madhya Pradesh",
+          "addressCountry": "IN"
+        }
+      },
+      "knowsAbout": [
+        "Web Development", "App Development", "AI/ML Integration",
+        "IoT & Embedded Systems", "Cyber Security", "Blockchain Technology",
+        "Computer Vision", "UI/UX Design"
+      ],
+      "member": [
+        {
+          "@type": "Person",
+          "name": "Akshat Singh Baghel",
+          "jobTitle": "Founder & Full Stack Developer",
+          "image": "https://team99.tech/assets/akshat.png",
+          "alumniOf": { "@type": "CollegeOrUniversity", "name": "Gyan Ganga Institute of Technology & Sciences, Jabalpur" }
+        },
+        {
+          "@type": "Person",
+          "name": "Mohammad Naved",
+          "jobTitle": "Co-Founder & Backend Developer",
+          "image": "https://team99.tech/assets/naved.jpeg",
+          "alumniOf": { "@type": "CollegeOrUniversity", "name": "Gyan Ganga Institute of Technology & Sciences, Jabalpur" }
+        },
+        {
+          "@type": "Person",
+          "name": "Aryan Vishwakarma",
+          "jobTitle": "Co-Founder & UI/UX Developer",
+          "image": "https://team99.tech/assets/aryan.jpeg",
+          "alumniOf": { "@type": "CollegeOrUniversity", "name": "Gyan Ganga Institute of Technology & Sciences, Jabalpur" }
+        }
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://team99.tech/#website",
+      "url": "https://team99.tech/",
+      "name": "Team99",
+      "description": "Portfolio of Team99 — IoT & Cyber Security student developers from GGITS Jabalpur.",
+      "publisher": { "@id": "https://team99.tech/#organization" },
+      "inLanguage": "en-IN"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "Smart AI-Based Attendance System",
+      "applicationCategory": "BusinessApplication",
+      "description": "Face-recognition attendance system that identifies students in real time on low-cost hardware, built by Team99.",
+      "author": { "@id": "https://team99.tech/#organization" },
+      "operatingSystem": "Linux, Windows"
+    }
   ]
 }
 </script>
@@ -105,7 +191,12 @@
 
       <div class="intro-side">
         <figure class="frame frame-solo">
-          <img src="assets/akshat.png" alt="Akshat Singh Baghel" loading="lazy">
+          <!-- Above the fold and almost certainly the LCP element, so it must not be
+               lazy-loaded: that defers the request until layout and directly inflates
+               Largest Contentful Paint, which is a ranking signal. -->
+          <img src="assets/akshat.png"
+               alt="Akshat Singh Baghel, Founder and Full Stack Developer at Team99"
+               loading="eager" fetchpriority="high" decoding="async">
         </figure>
       </div>
     </div>
@@ -231,7 +322,7 @@
 
       <div class="crew">
         <article class="crew-card">
-          <figure class="frame"><img src="assets/akshat.png" alt="Akshat Singh Baghel" loading="lazy"></figure>
+          <figure class="frame"><img src="assets/akshat.png" alt="Akshat Singh Baghel, Founder and Full Stack Developer at Team99" loading="lazy" decoding="async"></figure>
           <h3>Akshat Singh Baghel</h3>
           <p class="role">Founder &amp; Full Stack Developer</p>
           <p class="bio">Leads product &amp; development — builds end-to-end web systems and ties the team's work together.</p>
@@ -240,7 +331,7 @@
         </article>
 
         <article class="crew-card">
-          <figure class="frame"><img src="assets/naved.jpeg" alt="Mohammad Naved" loading="lazy"></figure>
+          <figure class="frame"><img src="assets/naved.jpeg" alt="Mohammad Naved, Co-Founder and Backend Developer at Team99" loading="lazy" decoding="async"></figure>
           <h3>Mohammad Naved</h3>
           <p class="role">Co-Founder &amp; Backend Developer</p>
           <p class="bio">Owns the backend, databases and system architecture powering Team99's projects.</p>
@@ -249,7 +340,7 @@
         </article>
 
         <article class="crew-card">
-          <figure class="frame"><img src="assets/aryan.jpeg" alt="Aryan Vishwakarma" loading="lazy"></figure>
+          <figure class="frame"><img src="assets/aryan.jpeg" alt="Aryan Vishwakarma, Co-Founder and UI/UX Developer at Team99" loading="lazy" decoding="async"></figure>
           <h3>Aryan Vishwakarma</h3>
           <p class="role">Co-Founder &amp; UI/UX Developer</p>
           <p class="bio">Designs and builds the interfaces — focused on speed, clarity and a polished feel.</p>
