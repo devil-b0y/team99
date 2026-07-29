@@ -482,7 +482,7 @@ img{ max-width: 100%; display: block; }
   font-size: 0.68rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--faint);
+  color: var(--dim);
 }
 
 /* ---------- Ticker ---------- */

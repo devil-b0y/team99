@@ -1,0 +1,10 @@
+# Team99
+
+> Team99 is a 3-member student developer team from Gyan Ganga Institute of Technology & Sciences (GGITS), Jabalpur, studying IoT & Cyber Security (incl. Blockchain Technology). We build fast websites, apps, and AI-hardware projects.
+
+Team99 consists of Akshat Singh Baghel (Founder & Full Stack Developer), Mohammad Naved, and Aryan Vishwakarma. Notable work includes the Smart AI-Based Attendance System.
+
+## Site
+
+- [Team99 Home](https://team99.tech/): Landing page with team introduction, skills, and projects.
+- [Sitemap](https://team99.tech/sitemap.xml): Full list of indexed pages.
