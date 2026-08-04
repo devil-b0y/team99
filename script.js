@@ -595,11 +595,17 @@ const canFly = () =>
   window.innerWidth >= 900 &&
   window.innerHeight >= 640;
 
+// A ratio threshold is unsafe here: panels are taller than the viewport, so a panel
+// of 3800px in a 610px window could never reach 18% intersection and stayed stuck at
+// opacity 0 — the section rendered black. Trigger on any contact instead, and hold
+// the reveal back with a bottom margin so it still fades in as the panel arrives
+// rather than while it is off screen. That is a viewport fraction, so it is always
+// satisfiable no matter how tall the panel gets.
 const panelObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) entry.target.classList.add('visible');
   });
-}, { threshold: 0.18 });
+}, { threshold: 0, rootMargin: '0px 0px -12% 0px' });
 
 // Whichever panel owns the middle of the screen names the HUD section
 const labelObserver = new IntersectionObserver((entries) => {
